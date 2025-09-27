@@ -71,7 +71,7 @@ const Dashboard = ({ userRole, onLogout }: DashboardProps) => {
               <h1 className="text-2xl font-bold text-primary">Lumina</h1>
               <Badge variant="secondary" className="capitalize">{userRole}</Badge>
             </div>
-            <Button variant="outline" onClick={onLogout}>Logout</Button>
+            <Button variant="outline" onClick={onLogout}>Go Back</Button>
           </div>
         </div>
       </header>
