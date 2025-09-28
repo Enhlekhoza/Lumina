@@ -25,3 +25,17 @@ dist-ssr
 
 # Environment variables
 .env
+
+# Optional additions for React / frontend
+build/
+.cache/
+*.env.local
+*.env.development
+*.env.production
+*.env.test
+
+# Optional additions for Node.js / backend
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
