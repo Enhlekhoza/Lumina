@@ -40,8 +40,11 @@ const iconMap = {
 const Dashboard = ({ userRole, onLogout }: DashboardProps) => {
   const [aiAnswer, setAiAnswer] = useState<string | null>(null);
   
-  // Fetch content from the 'home' story in Storyblok
-  const { story, loading, error } = useStoryblok('home', { version: "draft" });
+  // Determine the Storyblok slug based on the user's role
+  const slug = `${userRole}-dashboard`;
+
+  // Fetch role-specific content from Storyblok
+  const { story, loading, error } = useStoryblok(slug, { version: "draft" });
 
   const handleSearch = (query: string) => {
     console.log("User searched for:", query);
@@ -78,12 +81,19 @@ const Dashboard = ({ userRole, onLogout }: DashboardProps) => {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error ? (
-          <div className="min-h-screen flex items-center justify-center">Error: {error.message}</div>
+          <div className="text-center py-10">
+            <h2 className="text-2xl font-bold text-destructive mb-2">Content not found</h2>
+            <p className="text-muted-foreground">
+              It looks like the content for the '{userRole}' role hasn't been created yet.
+              <br />
+              Please create a new story in Storyblok with the slug: <code className="bg-muted p-1 rounded-sm">{slug}</code>
+            </p>
+          </div>
         ) : (
           <>
             {/* Welcome Section */}
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-2">{content?.title || 'Welcome'}</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">{content?.title || `Welcome, ${userRole}`}</h2>
               <p className="text-muted-foreground text-lg">{content?.subtitle || 'Here is your personalized dashboard.'}</p>
             </div>
 
