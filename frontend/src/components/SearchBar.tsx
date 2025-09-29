@@ -4,13 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 interface SearchBarProps {
+  userRole: 'admin' | 'student' | 'customer'; // <-- added
   onSearch: (query: string) => void;
-  onResults: (results: any) => void; // Callback to parent with AI results
+  onResults: (results: any) => void;
   placeholder?: string;
   className?: string;
 }
 
-const SearchBar = ({ onSearch, onResults, placeholder = "Ask anything...", className = "" }: SearchBarProps) => {
+const SearchBar = ({ userRole, onSearch, onResults, placeholder = "Ask anything...", className = "" }: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,28 +22,24 @@ const SearchBar = ({ onSearch, onResults, placeholder = "Ask anything...", class
 
     setIsLoading(true);
     setError(null);
-    onSearch(query.trim()); // Keep original onSearch for suggestions if needed
+    onSearch(query.trim());
 
     try {
       const response = await fetch('http://localhost:5001/api/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: query.trim() }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: query.trim(), role: userRole }), // send role
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch response from the server.');
-      }
+      if (!response.ok) throw new Error('Failed to fetch response from the server.');
 
       const data = await response.json();
-      onResults(data); // Pass the AI response to the parent
+      onResults(data);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       setError(errorMessage);
-      onResults(null); // Clear results on error
+      onResults(null);
     } finally {
       setIsLoading(false);
     }
@@ -67,11 +64,7 @@ const SearchBar = ({ onSearch, onResults, placeholder = "Ask anything...", class
           className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10 px-4 bg-primary hover:bg-primary-hover text-primary-foreground transition-smooth"
           disabled={!query.trim() || isLoading}
         >
-          {isLoading ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Sparkles className="w-4 h-4 mr-2" />
-          )}
+          {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
           Search
         </Button>
       </div>

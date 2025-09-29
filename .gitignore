@@ -57,3 +57,8 @@ coverage/
 # ------------------------
 frontend/cert/*.pem
 frontend/localhost*.pem
+
+frontend/localhost-key.pem
+frontend/localhost.pem
+
+PROJECT_SPEC.md
