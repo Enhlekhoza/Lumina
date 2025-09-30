@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import algoliasearch from "algoliasearch/lite";
 import {
   InstantSearch,
-  SearchBox,
   Hits,
   useInstantSearch,
 } from "react-instantsearch-hooks-web";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Sparkles, Loader2 } from "lucide-react";
 import "instantsearch.css/themes/satellite.css";
@@ -39,7 +39,6 @@ function Hit({ hit }: { hit: any }) {
   );
 }
 
-// --- New Results wrapper using hooks ---
 const ResultsWrapper = ({ children }: { children: React.ReactNode }) => {
   const { results } = useInstantSearch();
   if (!results || results.nbHits === 0) {
@@ -48,7 +47,11 @@ const ResultsWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "" }: SearchBarProps) => {
+const SearchBar = ({
+  userRole,
+  placeholder = "Ask anything...",
+  className = "",
+}: SearchBarProps) => {
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -92,24 +95,34 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "" }
   return (
     <div className={`relative ${className}`}>
       <InstantSearch searchClient={searchClient} indexName={indexName}>
-        <div className="flex items-center relative">
+        <div className="relative flex items-center">
+          {/* Search Icon */}
           <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground">
             <Search className="w-5 h-5" />
           </div>
-          <SearchBox
-            autoFocus
+
+          {/* ✅ Custom Input */}
+          <Input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
             className="pl-12 pr-32 h-14 text-base shadow-card border-border/50 focus:ring-primary focus:border-primary w-full"
-            onChange={(e) => setQuery(e.currentTarget.value)}
-            submitIconComponent={() => null}
+            disabled={isLoading}
           />
+
+          {/* ✅ Custom Button */}
           <Button
             type="button"
             onClick={() => topHitBody && setTopHitBody(topHitBody)}
             className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10 px-4 bg-primary hover:bg-primary-hover text-primary-foreground transition-smooth"
             disabled={!query.trim() || isLoading}
           >
-            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4 mr-2" />
+            )}
             Search
           </Button>
         </div>

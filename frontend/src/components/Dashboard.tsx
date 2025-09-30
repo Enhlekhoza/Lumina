@@ -39,8 +39,18 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
 
   const { story, loading, error } = useStoryblok(
     userRole ? `${userRole}-dashboard` : undefined,
-    { version: "draft" }
+    { version: import.meta.env.VITE_STORYBLOK_ENV === 'production' ? 'published' : 'draft' }
   );
+
+  // Debug Storyblok content
+  useEffect(() => {
+    if (story) {
+      console.log('Storyblok story:', story);
+    }
+    if (error) {
+      console.error('Storyblok error:', error);
+    }
+  }, [story, error]);
 
   if (!userRole || loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -113,25 +123,29 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat: any, index: number) => {
-            const Icon = iconMap[stat.icon as keyof typeof iconMap] || FileText;
-            return (
-              <Card key={index} className="shadow-card">
-                <CardContent className="p-6 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  </div>
-                  <Icon className={`w-8 h-8 ${stat.color || "text-primary"}`} />
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        {stats.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {stats.map((stat: any, index: number) => {
+              const Icon = iconMap[stat.icon as keyof typeof iconMap] || FileText;
+              return (
+                <Card key={index} className="shadow-card">
+                  <CardContent className="p-6 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+                      <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    </div>
+                    <Icon className={`w-8 h-8 ${stat.color || "text-primary"}`} />
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-muted-foreground mb-8">No stats available.</p>
+        )}
 
         {/* Quick Actions */}
-        {actionButtons.length > 0 && (
+        {actionButtons.length > 0 ? (
           <Card className="shadow-card mb-8">
             <CardHeader>
               <CardTitle className="text-foreground">Quick Actions</CardTitle>
@@ -155,6 +169,8 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
               </div>
             </CardContent>
           </Card>
+        ) : (
+          <p className="text-muted-foreground mb-8">No quick actions available.</p>
         )}
 
         {/* Role-specific */}
