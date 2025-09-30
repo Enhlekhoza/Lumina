@@ -8,7 +8,7 @@ import { BookOpen, Clock, User, Bookmark } from "lucide-react";
 
 const ContentPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { story, loading, error } = useStoryblok(slug, { version: "draft" });
+  const { story, loading, error } = useStoryblok(slug ? `articles/${slug}` : undefined, { version: "draft" });
   const { bookmarks, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
 
   if (loading) {

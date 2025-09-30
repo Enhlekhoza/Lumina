@@ -1,35 +1,51 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { PlayCircle } from "lucide-react";
 
-// Mock data for courses
 const courses = [
-  { slug: "introduction-to-react", title: "Introduction to React", category: "Web Development", progress: 75 },
-  { slug: "advanced-css", title: "Advanced CSS & Animations", category: "Web Design", progress: 40 },
-  { slug: "data-structures", title: "Data Structures in JS", category: "Computer Science", progress: 95 },
+  {
+    title: "Introduction to Data Science",
+    description: "Learn the fundamentals of data analysis and visualization.",
+    progress: 75,
+    status: "In Progress",
+  },
+  {
+    title: "Advanced Machine Learning",
+    description: "Explore complex algorithms and neural networks.",
+    progress: 30,
+    status: "In Progress",
+  },
+  {
+    title: "Web Development Bootcamp",
+    description: "Master front-end and back-end development.",
+    progress: 100,
+    status: "Completed",
+  },
 ];
 
 const MyCourses = () => {
   return (
-    <div className="mt-8">
-      <h2 className="text-2xl font-bold mb-4">My Courses</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {courses.map((course) => (
-          <Card key={course.slug} className="p-4 shadow-card flex flex-col justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">{course.category}</p>
-              <p className="font-semibold text-foreground">{course.title}</p>
-              <Progress value={course.progress} className="w-full mt-2" />
+    <div className="space-y-6">
+      {courses.map((course, index) => (
+        <Card key={index}>
+          <CardHeader>
+            <CardTitle>{course.title}</CardTitle>
+            <CardDescription>{course.description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium">{course.status}</p>
+              <p className="text-sm text-muted-foreground">{course.progress}%</p>
             </div>
-            <Button asChild variant="secondary" className="mt-4">
-              <Link to={`/content/story/${course.slug}`}>
-                {course.progress > 90 ? "Review" : "Continue"}
-              </Link>
+            <Progress value={course.progress} className="mb-4" />
+            <Button disabled={course.status === 'Completed'}>
+              <PlayCircle className="w-4 h-4 mr-2" />
+              {course.status === 'Completed' ? 'Course Completed' : 'Continue Course'}
             </Button>
-          </Card>
-        ))}
-      </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

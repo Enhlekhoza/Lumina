@@ -10,7 +10,11 @@ import ContentListPage from "./pages/ContentListPage";
 import ContentPage from "./pages/ContentPage";
 import ProfilePage from "./pages/ProfilePage";
 import Dashboard from "./components/Dashboard";
-import ArticlePage from "./components/ArticlePage"; // <-- NEW
+import ArticlePage from "./components/ArticlePage"; // ✅ Already added
+
+// ✅ NEW PAGES
+import AiChatPage from "./pages/AiChatPage";
+import LearningPathsPage from "./pages/LearningPathsPage";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +35,11 @@ const AppRoutes = () => {
       <Route path="/student-dashboard" element={<Dashboard onLogout={() => navigate("/")} />} />
 
       {/* Articles */}
-      <Route path="/articles/:slug" element={<ArticlePage />} /> {/* <-- NEW */}
+      <Route path="/articles/:slug" element={<ArticlePage />} />
+
+      {/* ✅ New Pages */}
+      <Route path="/ai-chat" element={<AiChatPage />} />
+      <Route path="/learning-paths" element={<LearningPathsPage />} />
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />

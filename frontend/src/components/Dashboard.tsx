@@ -5,22 +5,26 @@ import RecommendedContent from "./RecommendedContent";
 import MyBookmarks from "./MyBookmarks";
 import SearchBar from "./SearchBar";
 import UserManagementTable from "./UserManagementTable";
+import DailyFocus from "./DailyFocus";
+import LearningProgress from "./LearningProgress";
+import RequestTopic from "./RequestTopic";
+import LuminaAI from "./LuminaAI";
+import FeaturedContent from "./FeaturedContent";
+import AnalyticsDashboard from "./AnalyticsDashboard";
+import SystemSettings from "./SystemSettings";
+import QuickAction from "@/storyblok/QuickAction";
 
-import {
-  BookOpen, History, Bookmark, TrendingUp, Users,
-  FileText, Search, Plus, Settings, Sparkles, User
-} from "lucide-react";
+import { BookOpen, History, Bookmark, TrendingUp, Users, FileText, Search, Plus, Settings, Sparkles, User } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import useStoryblok from "@/hooks/useStoryblok";
 
-// Map icon names (from Storyblok) to Lucide icons
 const iconMap = {
-  BookOpen, History, Bookmark, TrendingUp, Users,
-  FileText, Search, Plus, Settings, Sparkles
+  BookOpen, History, Bookmark, TrendingUp, Users, FileText, Search, Plus, Settings, Sparkles
 };
 
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
@@ -38,19 +42,21 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   }, [location.pathname]);
 
   const { story, loading, error } = useStoryblok(
-    userRole ? `${userRole}-dashboard` : undefined,
+    userRole ? `${userRole}-dashboard`.replace(/^\/+|\/+$/g, "") : null,
     { version: import.meta.env.VITE_STORYBLOK_ENV === 'production' ? 'published' : 'draft' }
   );
 
-  // Debug Storyblok content
   useEffect(() => {
-    if (story) {
-      console.log('Storyblok story:', story);
-    }
-    if (error) {
-      console.error('Storyblok error:', error);
-    }
+    if (story) console.log('Storyblok story:', story);
+    if (error) console.error('Storyblok error:', error);
   }, [story, error]);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  };
 
   if (!userRole || loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -70,9 +76,8 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   );
 
   const rootBlock = story.content.body?.[0] || {};
-  const actionButtons = rootBlock.body?.filter((b: any) => b.component === "action_button") || [];
   const stats = rootBlock.stats || [];
-  const title = rootBlock.title || `Welcome, ${userRole}`;
+  const title = rootBlock.title || `${getGreeting()}, ${userRole}`;
   const subtitle = rootBlock.subtitle || "Here is your personalized dashboard.";
 
   return (
@@ -100,27 +105,28 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
           <p className="text-muted-foreground text-lg">{subtitle}</p>
         </div>
 
-        {/* Single Search */}
-        <div className="mb-8">
-          <SearchBar
-            userRole={userRole}
-            className="max-w-2xl"
-            onSearch={() => setAiAnswer(null)}
-            onResults={(results) => setAiAnswer(results?.answer || "No answer")}
-          />
-          {aiAnswer && (
-            <Card className="mt-4 max-w-2xl shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Sparkles className="w-5 h-5 mr-2 text-primary" /> AI Answer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-foreground whitespace-pre-wrap">{aiAnswer}</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* AI-Powered Briefing (shown once for all) */}
+        <LuminaAI userRole={userRole} />
+
+        {/* Search Bar */}
+        <SearchBar
+          userRole={userRole}
+          className="max-w-2xl mb-8"
+          onSearch={() => setAiAnswer(null)}
+          onResults={(results) => setAiAnswer(results?.answer || "No answer")}
+        />
+        {aiAnswer && (
+          <Card className="mt-4 max-w-2xl shadow-card">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="w-5 h-5 mr-2 text-primary" /> AI Answer
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground whitespace-pre-wrap">{aiAnswer}</p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats */}
         {stats.length > 0 ? (
@@ -145,39 +151,60 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
         )}
 
         {/* Quick Actions */}
-        {actionButtons.length > 0 ? (
-          <Card className="shadow-card mb-8">
-            <CardHeader>
-              <CardTitle className="text-foreground">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {actionButtons.map((action: any, index: number) => {
-                  const Icon = iconMap[action.icon as keyof typeof iconMap] || Plus;
-                  return (
-                    <Link to={`/content/${action.link}`} key={index}>
-                      <Button
-                        className="w-full h-auto p-4 flex flex-col items-center space-y-2 hover:bg-accent transition-smooth"
-                        variant="outline"
-                      >
-                        <Icon className="w-6 h-6 text-primary" />
-                        <span className="text-sm font-medium">{action.label}</span>
-                      </Button>
-                    </Link>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <p className="text-muted-foreground mb-8">No quick actions available.</p>
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <CardTitle className="text-foreground">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <QuickAction blok={{}} />
+          </CardContent>
+        </Card>
+
+        {/* Featured Content (shown for all) */}
+        <FeaturedContent />
+
+        {/* Role-specific components */}
+        {userRole === 'admin' && (
+          <>
+            <SystemSettings />
+            <AnalyticsDashboard />
+            <UserManagementTable />
+          </>
         )}
 
-        {/* Role-specific */}
-        {userRole === 'admin' && <UserManagementTable />}
-        {userRole === 'student' && <MyCourses />}
-        {userRole === 'customer' && <RecommendedContent />}
-        {(userRole === 'student' || userRole === 'customer') && <MyBookmarks />}
+        {userRole === 'student' && (
+          <>
+            <DailyFocus />
+            <LearningProgress />
+            <Card>
+              <CardContent className="p-6">
+                <Tabs defaultValue="my-courses">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="my-courses">My Courses</TabsTrigger>
+                    <TabsTrigger value="saved-material">Saved Material</TabsTrigger>
+                    <TabsTrigger value="request-topic">Request a Topic</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="my-courses" className="mt-6">
+                    <MyCourses />
+                  </TabsContent>
+                  <TabsContent value="saved-material" className="mt-6">
+                    <MyBookmarks />
+                  </TabsContent>
+                  <TabsContent value="request-topic" className="mt-6">
+                    <RequestTopic />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {userRole === 'customer' && (
+          <>
+            <RecommendedContent />
+            <MyBookmarks />
+          </>
+        )}
       </main>
     </div>
   );
