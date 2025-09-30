@@ -1,3 +1,4 @@
+// src/hooks/useStoryblok.ts
 import { useState, useEffect } from "react";
 import StoryblokClient, { StoryblokStory } from "storyblok-js-client";
 
@@ -12,16 +13,14 @@ interface UseStoryblokReturn {
   error: Error | null;
 }
 
-const useStoryblok = (rawSlug: string, options: UseStoryblokOptions = {}): UseStoryblokReturn => {
+const useStoryblok = (rawSlug?: string, options: UseStoryblokOptions = {}): UseStoryblokReturn => {
   const [story, setStory] = useState<StoryblokStory | null>(null);
   const [storyJson, setStoryJson] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const version = options.version || import.meta.env.VITE_STORYBLOK_VERSION || "draft";
-
-  // Clean the slug
-  const slug = rawSlug?.split("?")[0]?.trim()?.replace(/^\/|\/$/g, "");
+  const slug = rawSlug?.split("?")[0]?.trim().replace(/\/$/, "");
 
   useEffect(() => {
     if (!slug) {
@@ -36,8 +35,7 @@ const useStoryblok = (rawSlug: string, options: UseStoryblokOptions = {}): UseSt
         : import.meta.env.VITE_STORYBLOK_PREVIEW_TOKEN;
 
     if (!token) {
-      const msg = `Storyblok token not found for ${version} version.`;
-      setError(new Error(msg));
+      setError(new Error(`Storyblok token not found for ${version} version.`));
       setLoading(false);
       return;
     }
@@ -52,7 +50,6 @@ const useStoryblok = (rawSlug: string, options: UseStoryblokOptions = {}): UseSt
         const { data } = await client.get(`cdn/stories/${slug}`, { version });
 
         if (!data.story) {
-          // Placeholder for missing story
           const placeholder: StoryblokStory = {
             name: slug,
             created_at: new Date().toISOString(),
@@ -61,12 +58,7 @@ const useStoryblok = (rawSlug: string, options: UseStoryblokOptions = {}): UseSt
             uuid: "placeholder",
             slug,
             full_slug: slug,
-            content: {
-              component: "placeholder",
-              title: `Placeholder for '${slug}'`,
-              subtitle: "This content does not exist yet. Please create it in Storyblok.",
-              body: [],
-            },
+            content: { component: "placeholder", title: "Missing story", body: [] },
           };
           setStory(placeholder);
           setStoryJson(JSON.stringify(placeholder, null, 2));
@@ -75,31 +67,9 @@ const useStoryblok = (rawSlug: string, options: UseStoryblokOptions = {}): UseSt
           setStoryJson(JSON.stringify(data.story, null, 2));
         }
       } catch (err: any) {
-        // Handle 404 silently with placeholder
-        if (err.response?.status === 404) {
-          const placeholder: StoryblokStory = {
-            name: slug,
-            created_at: new Date().toISOString(),
-            published_at: null,
-            id: 0,
-            uuid: "placeholder-404",
-            slug,
-            full_slug: slug,
-            content: {
-              component: "placeholder",
-              title: `Placeholder for '${slug}'`,
-              subtitle: "This content does not exist yet. Please create it in Storyblok.",
-              body: [],
-            },
-          };
-          setStory(placeholder);
-          setStoryJson(JSON.stringify(placeholder, null, 2));
-        } else {
-          console.error("❌ Unexpected error fetching Storyblok story:", err);
-          setError(err instanceof Error ? err : new Error("Unknown error fetching Storyblok story."));
-          setStory(null);
-          setStoryJson(null);
-        }
+        setError(err instanceof Error ? err : new Error("Unknown error fetching Storyblok story."));
+        setStory(null);
+        setStoryJson(null);
       } finally {
         setLoading(false);
       }
