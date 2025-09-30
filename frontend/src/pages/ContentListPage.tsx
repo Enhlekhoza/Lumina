@@ -48,7 +48,7 @@ const ContentListPage = () => {
         {stories.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stories.map((storyItem: any) => (
-              <Link to={`/${contentType}/${storyItem.slug}`} key={storyItem.uuid}>
+              <Link to={`/content/story/${storyItem.slug}`} key={storyItem.uuid}>
                 <ContentCard
                   title={storyItem.content.title}
                   summary={storyItem.content.summary}
