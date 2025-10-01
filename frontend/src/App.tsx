@@ -1,18 +1,23 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 
+// Pages
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ContentListPage from "./pages/ContentListPage";
 import ContentPage from "./pages/ContentPage";
 import ProfilePage from "./pages/ProfilePage";
-import Dashboard from "./components/Dashboard";
-import ArticlePage from "./components/ArticlePage"; // ✅ Already added
+import QuickActionPage from "./pages/QuickActionPage";
 
-// ✅ NEW PAGES
+// Components acting as pages
+import Dashboard from "./components/Dashboard";
+import ArticlePage from "./components/ArticlePage";
+
+// New Pages
 import AiChatPage from "./pages/AiChatPage";
 import LearningPathsPage from "./pages/LearningPathsPage";
 
@@ -37,7 +42,10 @@ const AppRoutes = () => {
       {/* Articles */}
       <Route path="/articles/:slug" element={<ArticlePage />} />
 
-      {/* ✅ New Pages */}
+      {/* Quick Actions */}
+      <Route path="/quick-action/:actionId" element={<QuickActionPage />} />
+
+      {/* New Pages */}
       <Route path="/ai-chat" element={<AiChatPage />} />
       <Route path="/learning-paths" element={<LearningPathsPage />} />
 

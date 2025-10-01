@@ -18,7 +18,7 @@ import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import useStoryblok from "@/hooks/useStoryblok";
 import StoryblokClient from "storyblok-js-client";
 
-// Map icon names (from Storyblok) to Lucide icons
+// Map icon names to Lucide icons
 const iconMap = {
   BookOpen, History, Bookmark, TrendingUp, Users,
   FileText, Search, Plus, Settings, Sparkles
@@ -59,13 +59,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
       version: STORYBLOK_VERSION,
       sort_by: "first_published_at:desc"
     })
-    .then(res => {
-      if (res.data && res.data.stories) {
-        setArticles(res.data.stories);
-      } else {
-        setArticles([]);
-      }
-    })
+    .then(res => setArticles(res.data.stories || []))
     .catch(err => console.error("Storyblok articles error:", err))
     .finally(() => setArticlesLoading(false));
   }, []);
@@ -141,7 +135,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
         </div>
 
         {/* Stats */}
-        {stats.length > 0 ? (
+        {stats.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {stats.map((stat: any, index: number) => {
               const Icon = iconMap[stat.icon as keyof typeof iconMap] || FileText;
@@ -158,12 +152,10 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
               );
             })}
           </div>
-        ) : (
-          <p className="text-muted-foreground mb-8">No stats available.</p>
         )}
 
         {/* Quick Actions */}
-        {actionButtons.length > 0 ? (
+        {actionButtons.length > 0 && (
           <Card className="shadow-card mb-8">
             <CardHeader>
               <CardTitle className="text-foreground">Quick Actions</CardTitle>
@@ -174,11 +166,8 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                   const Icon = iconMap[action.icon as keyof typeof iconMap] || Plus;
                   return (
                     <Link
-                      to={
-                        action.label.toLowerCase() === "edit content"
-                          ? "/content/articles"
-                          : `/content/${action.link}`
-                      }
+                      to={`/quick-action/${action.link}`} // ✅ Matches mockContent keys
+                      state={{ fromDashboard: `${userRole}-dashboard` }}
                       key={index}
                     >
                       <Button
@@ -194,8 +183,6 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <p className="text-muted-foreground mb-8">No quick actions available.</p>
         )}
 
         {/* Role-specific content */}
@@ -217,7 +204,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                   <Link
                     key={article.slug}
                     to={`/articles/${article.slug}`}
-                    state={{ fromDashboard: `${userRole}-dashboard` }} // ✅ Pass dashboard state
+                    state={{ fromDashboard: `${userRole}-dashboard` }}
                     className="block border rounded-lg overflow-hidden shadow hover:shadow-lg transition"
                   >
                     {article.content.featured_image && (
