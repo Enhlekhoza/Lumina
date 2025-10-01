@@ -1,3 +1,4 @@
+// src/pages/Dashboard.tsx
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import MyCourses from "./MyCourses";
@@ -23,11 +24,9 @@ const iconMap = {
   FileText, Search, Plus, Settings, Sparkles
 };
 
-// Determine token & version for Storyblok
-const STORYBLOK_VERSION = "published"; // force published for your live articles
+// Storyblok client
+const STORYBLOK_VERSION = "published"; 
 const STORYBLOK_TOKEN = import.meta.env.VITE_STORYBLOK_PUBLIC_TOKEN;
-
-// Storyblok client for fetching articles
 const sb = new StoryblokClient({ accessToken: STORYBLOK_TOKEN });
 
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
@@ -55,30 +54,21 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
 
   // Fetch published articles dynamically
   useEffect(() => {
-    console.log("Fetching published articles from Storyblok...");
     sb.get("cdn/stories", {
-      starts_with: "articles", // folder
+      starts_with: "articles",
       version: STORYBLOK_VERSION,
       sort_by: "first_published_at:desc"
     })
     .then(res => {
-      console.log("Raw articles response:", res);
       if (res.data && res.data.stories) {
-        console.log("Articles fetched:", res.data.stories.map((a: any) => a.slug));
         setArticles(res.data.stories);
       } else {
-        console.warn("No articles returned by Storyblok!");
         setArticles([]);
       }
     })
     .catch(err => console.error("Storyblok articles error:", err))
     .finally(() => setArticlesLoading(false));
   }, []);
-
-  useEffect(() => {
-    if (story) console.log('Dashboard story:', story);
-    if (error) console.error('Storyblok dashboard error:', error);
-  }, [story, error]);
 
   if (!userRole || loading) return (
     <div className="min-h-screen flex items-center justify-center">
@@ -222,15 +212,28 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             {articlesLoading ? (
               <p>Loading articles...</p>
             ) : articles.length > 0 ? (
-              <ul className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {articles.map(article => (
-                  <li key={article.slug}>
-                    <Link to={`/articles/${article.slug}`} className="text-primary hover:underline">
-                      {article.name}
-                    </Link>
-                  </li>
+                  <Link key={article.slug} to={`/articles/${article.slug}`} className="block border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+                    {article.content.featured_image && (
+                      <img
+                        src={article.content.featured_image.filename || article.content.featured_image}
+                        alt={article.content.title}
+                        className="w-full h-40 object-cover"
+                      />
+                    )}
+                    <div className="p-4">
+                      <h3 className="text-xl font-bold mb-1">{article.content.title}</h3>
+                      {article.content.subtitle && <p className="text-gray-500 mb-2">{article.content.subtitle}</p>}
+                      <p className="text-gray-400 text-sm mb-2">
+                        {article.content.author && <>By {article.content.author}</>} 
+                        {article.content.publish_date && <> • {new Date(article.content.publish_date).toLocaleDateString()}</>}
+                      </p>
+                      {article.content.excerpt && <p className="text-gray-600">{article.content.excerpt}</p>}
+                    </div>
+                  </Link>
                 ))}
-              </ul>
+              </div>
             ) : (
               <p className="text-muted-foreground">No articles found.</p>
             )}
@@ -241,7 +244,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   );
 };
 
-// Helper role-specific components (optional for cleaner code)
+// Role-specific helper components
 const UserManagementTableCard = () => (
   <Card className="shadow-card mb-8">
     <CardHeader>

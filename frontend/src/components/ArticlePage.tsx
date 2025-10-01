@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 
 const ArticlePage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { story, loading, error } = useStoryblok(`articles/${slug}`);
+  const { story, loading, error } = useStoryblok(`articles/${slug}`, { version: "published" });
 
   if (loading) {
     return (
@@ -33,19 +33,39 @@ const ArticlePage = () => {
     );
   }
 
+  const { title, subtitle, featured_image, author, publish_date, excerpt, body } = story.content;
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Article title and subtitle */}
-      <h1 className="text-4xl font-bold mb-2">{story.content.title}</h1>
-      {story.content.subtitle && (
-        <p className="text-gray-500 mb-4">{story.content.subtitle}</p>
+      <h1 className="text-4xl font-bold mb-2">{title}</h1>
+      {subtitle && <p className="text-gray-500 mb-2">{subtitle}</p>}
+
+      {/* Author and publish date */}
+      <p className="text-gray-400 text-sm mb-4">
+        {author && <>By {author}</>} {publish_date && <>• {new Date(publish_date).toLocaleDateString()}</>}
+      </p>
+
+      {/* Featured image */}
+      {featured_image && (
+        <img
+          src={featured_image.filename || featured_image}
+          alt={title}
+          className="mb-6 w-full rounded-lg"
+        />
       )}
 
-      {/* Storyblok content blocks */}
-      {story.content.body?.map((blok: any, idx: number) => (
+      {/* Excerpt */}
+      {excerpt && (
+        <p className="text-gray-600 italic mb-6">{excerpt}</p>
+      )}
+
+      {/* Storyblok body blocks (Text Block, CTA, etc.) */}
+      {body?.map((blok: any, idx: number) => (
         <StoryblokComponent blok={blok} key={idx} />
       ))}
 
+      {/* Back button */}
       <div className="mt-8">
         <Link to="/">
           <Button variant="outline">
