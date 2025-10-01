@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react";
 
 const ArticlePage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { story, loading, error } = useStoryblok(`/articles/${slug}`);
+  const { story, loading, error } = useStoryblok(`articles/${slug}`);
 
   if (loading) {
     return (
