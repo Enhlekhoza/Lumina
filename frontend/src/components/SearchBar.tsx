@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Sparkles, Loader2 } from "lucide-react";
@@ -17,9 +17,11 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+  const handleSearch = async (q: string = query) => {
+    if (!q.trim()) return;
     setIsLoading(true);
     setError(null);
     onSearch();
@@ -28,7 +30,7 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
       const response = await fetch("http://localhost:5001/api/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), role: userRole }),
+        body: JSON.stringify({ query: q.trim(), role: userRole }),
       });
 
       if (!response.ok) throw new Error("Failed to fetch search results");
@@ -48,6 +50,46 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    // Debounced suggestions
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      if (!value.trim()) {
+        setSuggestions([]);
+        return;
+      }
+      try {
+        const res = await fetch("http://localhost:5001/api/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: value.trim(), role: userRole }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setSuggestions(data.results?.slice(0, 5) || []);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 300); // 300ms debounce
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (s: string) => {
+    setQuery(s);
+    handleSearch(s);
+    setSuggestions([]);
+  };
+
   return (
     <div className={`relative ${className}`}>
       <div className="relative flex items-center">
@@ -60,7 +102,8 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
         <Input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           className="pl-12 pr-32 h-14 text-base shadow-card border-border/50 focus:ring-primary focus:border-primary w-full"
           disabled={isLoading}
@@ -69,7 +112,7 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
         {/* Search Button */}
         <Button
           type="button"
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
           className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10 px-4 bg-primary hover:bg-primary-hover text-primary-foreground transition-smooth"
           disabled={!query.trim() || isLoading}
         >
@@ -77,6 +120,21 @@ const SearchBar = ({ userRole, placeholder = "Ask anything...", className = "", 
           Search
         </Button>
       </div>
+
+      {/* Suggestions */}
+      {suggestions.length > 0 && (
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+          {suggestions.map((s, i) => (
+            <li
+              key={i}
+              onClick={() => handleSuggestionClick(s.title || s.objectID || s)}
+              className="cursor-pointer px-4 py-2 hover:bg-gray-100"
+            >
+              {s.title || s.objectID || s}
+            </li>
+          ))}
+        </ul>
+      )}
 
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
