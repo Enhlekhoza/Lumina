@@ -3,8 +3,8 @@ import { useLocation, Link } from "react-router-dom";
 import MyCourses from "./MyCourses";
 import RecommendedContent from "./RecommendedContent";
 import MyBookmarks from "./MyBookmarks";
-import SearchBar from "./SearchBar";
 import UserManagementTable from "./UserManagementTable";
+import SearchBar from "./SearchBar";
 
 import {
   BookOpen, History, Bookmark, TrendingUp, Users,
@@ -14,9 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-
 import useStoryblok from "@/hooks/useStoryblok";
+import StoryblokClient from "storyblok-js-client";
 
 // Map icon names (from Storyblok) to Lucide icons
 const iconMap = {
@@ -24,11 +23,21 @@ const iconMap = {
   FileText, Search, Plus, Settings, Sparkles
 };
 
+// Determine token & version for Storyblok
+const STORYBLOK_VERSION = "published"; // force published for your live articles
+const STORYBLOK_TOKEN = import.meta.env.VITE_STORYBLOK_PUBLIC_TOKEN;
+
+// Storyblok client for fetching articles
+const sb = new StoryblokClient({ accessToken: STORYBLOK_TOKEN });
+
 const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
   const location = useLocation();
   const [userRole, setUserRole] = useState<'admin' | 'student' | 'customer' | null>(null);
   const [aiAnswer, setAiAnswer] = useState<string | null>(null);
+  const [articles, setArticles] = useState<any[]>([]);
+  const [articlesLoading, setArticlesLoading] = useState(true);
 
+  // Detect user role from URL
   useEffect(() => {
     const pathRole = location.pathname.split("/")[1]?.replace("-dashboard", "").toLowerCase();
     if (["admin", "student", "customer"].includes(pathRole)) {
@@ -38,14 +47,37 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
     }
   }, [location.pathname]);
 
+  // Fetch dashboard story
   const { story, loading, error } = useStoryblok(
     userRole ? `${userRole}-dashboard` : undefined,
-    { version: import.meta.env.VITE_STORYBLOK_ENV === 'production' ? 'published' : 'draft' }
+    { version: STORYBLOK_VERSION }
   );
 
+  // Fetch published articles dynamically
   useEffect(() => {
-    if (story) console.log('Storyblok story:', story);
-    if (error) console.error('Storyblok error:', error);
+    console.log("Fetching published articles from Storyblok...");
+    sb.get("cdn/stories", {
+      starts_with: "articles", // folder
+      version: STORYBLOK_VERSION,
+      sort_by: "first_published_at:desc"
+    })
+    .then(res => {
+      console.log("Raw articles response:", res);
+      if (res.data && res.data.stories) {
+        console.log("Articles fetched:", res.data.stories.map((a: any) => a.slug));
+        setArticles(res.data.stories);
+      } else {
+        console.warn("No articles returned by Storyblok!");
+        setArticles([]);
+      }
+    })
+    .catch(err => console.error("Storyblok articles error:", err))
+    .finally(() => setArticlesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (story) console.log('Dashboard story:', story);
+    if (error) console.error('Storyblok dashboard error:', error);
   }, [story, error]);
 
   if (!userRole || loading) return (
@@ -177,66 +209,95 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
         )}
 
         {/* Role-specific content */}
-        {userRole === 'admin' && (
-          <>
-            <Card className="shadow-card mb-8">
-              <CardHeader>
-                <CardTitle className="text-foreground">User Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Manage users, roles, and permissions in the system.</p>
-                <UserManagementTable />
-              </CardContent>
-            </Card>
-          </>
-        )}
-        {userRole === 'student' && (
-          <>
-            <Card className="shadow-card mb-8">
-              <CardHeader>
-                <CardTitle className="text-foreground">My Courses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Access your assigned courses and learning materials.</p>
-                <MyCourses />
-              </CardContent>
-            </Card>
-            <Card className="shadow-card mb-8">
-              <CardHeader>
-                <CardTitle className="text-foreground">My Bookmarks</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Track your favorite learning resources.</p>
-                <MyBookmarks />
-              </CardContent>
-            </Card>
-          </>
-        )}
-        {userRole === 'customer' && (
-          <>
-            <Card className="shadow-card mb-8">
-              <CardHeader>
-                <CardTitle className="text-foreground">Recommended Content</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Get content tailored to your role and needs.</p>
-                <RecommendedContent />
-              </CardContent>
-            </Card>
-            <Card className="shadow-card mb-8">
-              <CardHeader>
-                <CardTitle className="text-foreground">My Bookmarks</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">Track your favorite learning resources.</p>
-                <MyBookmarks />
-              </CardContent>
-            </Card>
-          </>
-        )}
+        {userRole === 'admin' && <UserManagementTableCard />}
+        {userRole === 'student' && <StudentCards />}
+        {userRole === 'customer' && <CustomerCards />}
+
+        {/* Articles List */}
+        <Card className="shadow-card mb-8">
+          <CardHeader>
+            <CardTitle>All Articles</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {articlesLoading ? (
+              <p>Loading articles...</p>
+            ) : articles.length > 0 ? (
+              <ul className="space-y-2">
+                {articles.map(article => (
+                  <li key={article.slug}>
+                    <Link to={`/articles/${article.slug}`} className="text-primary hover:underline">
+                      {article.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground">No articles found.</p>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
 };
+
+// Helper role-specific components (optional for cleaner code)
+const UserManagementTableCard = () => (
+  <Card className="shadow-card mb-8">
+    <CardHeader>
+      <CardTitle>User Management</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <p className="text-muted-foreground mb-4">Manage users, roles, and permissions in the system.</p>
+      <UserManagementTable />
+    </CardContent>
+  </Card>
+);
+
+const StudentCards = () => (
+  <>
+    <Card className="shadow-card mb-8">
+      <CardHeader>
+        <CardTitle>My Courses</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">Access your assigned courses and learning materials.</p>
+        <MyCourses />
+      </CardContent>
+    </Card>
+    <Card className="shadow-card mb-8">
+      <CardHeader>
+        <CardTitle>My Bookmarks</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">Track your favorite learning resources.</p>
+        <MyBookmarks />
+      </CardContent>
+    </Card>
+  </>
+);
+
+const CustomerCards = () => (
+  <>
+    <Card className="shadow-card mb-8">
+      <CardHeader>
+        <CardTitle>Recommended Content</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">Get content tailored to your role and needs.</p>
+        <RecommendedContent />
+      </CardContent>
+    </Card>
+    <Card className="shadow-card mb-8">
+      <CardHeader>
+        <CardTitle>My Bookmarks</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground mb-4">Track your favorite learning resources.</p>
+        <MyBookmarks />
+      </CardContent>
+    </Card>
+  </>
+);
 
 export default Dashboard;
