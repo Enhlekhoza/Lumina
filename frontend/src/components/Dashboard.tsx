@@ -214,7 +214,12 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
             ) : articles.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {articles.map(article => (
-                  <Link key={article.slug} to={`/articles/${article.slug}`} className="block border rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+                  <Link
+                    key={article.slug}
+                    to={`/articles/${article.slug}`}
+                    state={{ fromDashboard: `${userRole}-dashboard` }} // ✅ Pass dashboard state
+                    className="block border rounded-lg overflow-hidden shadow hover:shadow-lg transition"
+                  >
                     {article.content.featured_image && (
                       <img
                         src={article.content.featured_image.filename || article.content.featured_image}
@@ -226,7 +231,7 @@ const Dashboard = ({ onLogout }: { onLogout: () => void }) => {
                       <h3 className="text-xl font-bold mb-1">{article.content.title}</h3>
                       {article.content.subtitle && <p className="text-gray-500 mb-2">{article.content.subtitle}</p>}
                       <p className="text-gray-400 text-sm mb-2">
-                        {article.content.author && <>By {article.content.author}</>} 
+                        {article.content.author && <>By {article.content.author}</>}
                         {article.content.publish_date && <> • {new Date(article.content.publish_date).toLocaleDateString()}</>}
                       </p>
                       {article.content.excerpt && <p className="text-gray-600">{article.content.excerpt}</p>}

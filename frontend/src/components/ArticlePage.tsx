@@ -1,5 +1,4 @@
-// src/pages/ArticlePage.tsx
-import { useParams, Link } from "react-router-dom";
+import { useParams, useLocation, Link } from "react-router-dom";
 import StoryblokComponent from "@/storyblok/StoryblokComponent";
 import useStoryblok from "@/hooks/useStoryblok";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,11 @@ import { ArrowLeft } from "lucide-react";
 
 const ArticlePage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const { story, loading, error } = useStoryblok(`articles/${slug}`, { version: "published" });
+
+  // Get the origin dashboard from state (fallback to student-dashboard)
+  const fromDashboard = (location.state as any)?.fromDashboard || "student-dashboard";
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center">Loading article...</div>;
@@ -17,7 +20,7 @@ const ArticlePage = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
         <p className="text-red-500 text-lg mb-4">{error?.message || "Article not found."}</p>
-        <Link to="/">
+        <Link to={`/${fromDashboard}`}>
           <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Button>
@@ -58,7 +61,7 @@ const ArticlePage = () => {
 
       {/* Back button */}
       <div className="mt-8">
-        <Link to="/">
+        <Link to={`/${fromDashboard}`}>
           <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Button>
